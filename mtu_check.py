@@ -1,11 +1,33 @@
 import argparse
 from solidfire.factory import ElementFactory
 
+# declare vars for later use
+remote_sips = []
+local_sips = []
+ping_status = {}
+
+# This class is used to allow for a nice output to be displayed
 class mtu_check(object):
+    """
+    # Need a object to add to a dict for nice table output
+    params: host = remote cluster node
+    params: sip = local cluser node
+    params: mtu = mtu of local cluster node
+    params: check = output of whether the check is pass or fail
+    """
     host = ""
     sip = ""
     mtu = ""
     check = ""
+
+# This is used to build the object from the class above
+def check_mtu(host, sip, mtu, check):
+    mtu_status = mtu_check()
+    mtu_status.host = host
+    mtu_status.sip = sip
+    mtu_status.mtu = mtu
+    mtu_status.check = check
+    return mtu_status
 
 def get_inputs():
     """
@@ -39,6 +61,7 @@ def get_inputs():
     args = parser.parse_args()
     remote_mvip = args.rmtm
     remote_user = args.rmtu
+    # If no password on the CLI input, prompt for it
     if not args.rmtp:
         remote_pass = getpass("Enter password for user{} on cluster {}: ".format(remote_sfuser, remote_sfmvip))
     else:
@@ -53,85 +76,108 @@ def get_inputs():
     
     return remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass
 
-def check_mtu(host, sip, mtu, check):
-    mtu_status = mtu_check()
-    mtu_status.host = host
-    mtu_status.sip = sip
-    mtu_status.mtu = mtu
-    mtu_status.check = check
-    return mtu_status
-
-#Print a table
 def prettyPrint(host, sip, mtu, check):
-    #When printing values wider than the second column, split and print them
+    """
+    # Print a nice table view
+    """
     print("| "  + host.center(20) + " | " + sip.center(20) + " | " + mtu.center(10) + " | " + check.center(10) + " |".center(2))
 
-remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass = get_inputs()
+def connect_remote(remote_mvip, remote_user, remote_pass):
+    """
+    # Create remote cluster connection
+    """
+    remote_sfe = ElementFactory.create(remote_mvip, remote_user, remote_pass, print_ascii_art=False)
+    return remote_sfe
 
-remote_sips = []
-local_sips = []
-ping_status = {}
+def connect_local(local_mvip, local_user, local_pass):
+    """
+    # Build local node list
+    """
+    local_sfe = ElementFactory.create(local_mvip, local_user, local_pass, print_ascii_art=False)
+    return local_sfe
 
-remote_sfe = ElementFactory.create(remote_mvip, remote_user, remote_pass, print_ascii_art=False)
-remote_nodes = remote_sfe.list_active_nodes()
-for node in remote_nodes.nodes:
-    remote_sips.append(node.sip)
+def build_remote(remote_sfe):
+    """
+    # Build remote node list
+    """
+    remote_nodes = remote_sfe.list_active_nodes()
+    for node in remote_nodes.nodes:
+        remote_sips.append(node.sip)
 
-for sip in remote_sips:
-    remote_host_list = (','.join(remote_sips))
-print("remotes are {}".format(remote_host_list))
+    for sip in remote_sips:
+        remote_host_list = (','.join(remote_sips))
+    print("remotes are {}".format(remote_host_list))
+    return remote_sips, remote_host_list
 
-local_sfe = ElementFactory.create(local_mvip, local_user, local_pass, print_ascii_art=False)
-local_nodes = local_sfe.list_active_nodes()
-for node in local_nodes.nodes:
-    local_sips.append(node.sip)
-    
-for sip in local_sips:
-    local_host_list = (','.join(local_sips))
-print("locals are {}".format(local_host_list))
-
-# This is a node level command and we connect to 442
-for sip in local_sips:
-    nsip = sip + ":442"
-    nfe = ElementFactory.create(nsip,"admin","Netapp1!",print_ascii_art=False)
-
-    # Get the node networking configuration
-    net_config = nfe.get_network_config()
-    net_config_json = net_config.to_json()
-
-    # Set the MTU as an int and remove 28 bytes for the network and ICMP headers
-    mtu = (int(net_config_json['network']['Bond10G']['mtu'])) - 28
-
-    # Run the ping at the MTU size and prevent fragmentation
-    # Need to find a way to run this out a specified interface in case of a routed network config
-    ping_result = nfe.test_ping(packet_size=mtu,hosts=remote_host_list, prohibit_fragmentation=True)
-    # Set the result to JSON for easy parsing
-    ping_result_json = ping_result.to_json()
-
-    print("+" + "-"*71 + "+")
-    remote_hdr = "Remote IP"
-    local_hdr = "Local IP"
-    mtu_hdr = "MTU"
-    state_hdr = "State"
-    prettyPrint(remote_hdr,local_hdr,mtu_hdr,state_hdr)
-    # Run the check and output a simple response
-    for host in remote_sips:
-        if ping_result_json['details'][host]['successful']:
-            check = "pass"
-            mtu_out = check_mtu(host, sip, mtu, check)
-            ping_status[host]=mtu_out
-            
-        else:
-            check = "fail"
-            mtu_out = check_mtu(host, sip, mtu, check)
-            ping_status[host]=mtu_out
-    for key in ping_status.keys():
-        host = str(ping_status[key].host)
-        sip = str(ping_status[key].sip)
-        mtu = str(ping_status[key].mtu) + " "
-        check = str(ping_status[key].check) + " "
-        print("+" + "-"*71 + "+")
-        #print("|" + host +"|"+ sip +"|"+ mtu +"|"+ check + " |")
-        prettyPrint(host,sip,mtu,check)
-    print("+" + "-"*71 + "+")
+def build_local(local_sfe):
+    """
+    # Build local node list
+    """
+    local_nodes = local_sfe.list_active_nodes()
+    for node in local_nodes.nodes:
+        local_sips.append(node.sip)
         
+    for sip in local_sips:
+        local_host_list = (','.join(local_sips))
+    print("locals are {}".format(local_host_list))
+    return local_sips, local_host_list
+
+def get_ping_result(local_user, local_pass, remote_host_list):
+    """
+    # Actually do the work of connecting and running the pings
+    """
+    # This is a node level command and we connect to 442
+    for sip in local_sips:
+        nsip = sip + ":442"
+        nfe = ElementFactory.create(nsip,local_user,local_pass,print_ascii_art=False)
+
+        # Get the node networking configuration
+        net_config = nfe.get_network_config()
+        net_config_json = net_config.to_json()
+
+        # Set the MTU as an int and remove 28 bytes for the network and ICMP headers
+        mtu = (int(net_config_json['network']['Bond10G']['mtu'])) - 28
+
+        # Run the ping at the MTU size and prevent fragmentation
+        # Need to find a way to run this out a specified interface in case of a routed network config
+        ping_result = nfe.test_ping(packet_size=mtu,hosts=remote_host_list, prohibit_fragmentation=True)
+        # Set the result to JSON for easy parsing
+        ping_result_json = ping_result.to_json()
+
+        print("+" + "-"*71 + "+")
+        remote_hdr = "Remote IP"
+        local_hdr = "Local IP"
+        mtu_hdr = "MTU"
+        state_hdr = "State"
+        prettyPrint(remote_hdr,local_hdr,mtu_hdr,state_hdr)
+        # Run the check and output a simple response
+        for host in remote_sips:
+            if ping_result_json['details'][host]['successful']:
+                check = "pass"
+                mtu_out = check_mtu(host, sip, mtu, check)
+                ping_status[host]=mtu_out
+                
+            else:
+                check = "fail"
+                mtu_out = check_mtu(host, sip, mtu, check)
+                ping_status[host]=mtu_out
+        for key in ping_status.keys():
+            host = str(ping_status[key].host)
+            sip = str(ping_status[key].sip)
+            mtu = str(ping_status[key].mtu) + " "
+            check = str(ping_status[key].check) + " "
+            print("+" + "-"*71 + "+")
+            #print("|" + host +"|"+ sip +"|"+ mtu +"|"+ check + " |")
+            prettyPrint(host,sip,mtu,check)
+        print("+" + "-"*71 + "+")
+
+def main():
+    remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass = get_inputs()
+    remote_sfe = connect_remote(remote_mvip, remote_user, remote_pass)
+    local_sfe = connect_local(local_mvip, local_user, local_pass)
+    remote_sips, remote_host_list = build_remote(remote_sfe)
+    local_sips, local_host_list = build_local(local_sfe)
+    get_ping_result(local_user, local_pass, remote_host_list)
+
+if __name__ == "__main__":
+    main()
