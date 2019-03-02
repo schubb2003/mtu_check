@@ -1,25 +1,50 @@
+import sys
 from solidfire.factory import ElementFactory
 
-remote_mvip = input("Enter the MVIP of the cluster we are pinging out to: ")
-remote_admin = input("Enter the remote admin user: ")
-remote_password = input("Enter the remote admin password: ")
+class mtu_check(object):
+    host = ""
+    sip = ""
+    mtu = ""
+    check = ""
+
+def check_mtu(host, sip, mtu, check):
+    mtu_status = mtu_check()
+    mtu_status.host = host
+    mtu_status.sip = sip
+    mtu_status.mtu = mtu
+    mtu_status.check = check
+    return mtu_status
+
+if len(sys.argv) < 7:
+    print("Insufficient arguments entered:\n"
+          "Usage: python <script> <remote_mvip> <remote_admin> <remote_password>"
+          "<local_mvip> <local_admin> <local_password>")
+
+remote_mvip = sys.argv[1]
+remote_admin = sys.argv[2]
+remote_password = sys.argv[3]
+local_mvip = sys.argv[4]
+local_admin = sys.argv[5]
+local_password = sys.argv[6]
+
+remote_sips = []
+local_sips = []
+ping_status = {}
 
 remote_sfe = ElementFactory.create(remote_mvip, remote_admin, remote_password, print_ascii_art=False)
-remote_cls_info = remote_sfe.get_cluster_info()
-remote_cls_info_json = remote_cls_info.to_json()
-remote_sips = remote_cls_info_json['clusterInfo']['ensemble']
+remote_nodes = remote_sfe.list_active_nodes()
+for node in remote_nodes.nodes:
+    remote_sips.append(node.sip)
+
 for sip in remote_sips:
     remote_host_list = (','.join(remote_sips))
 print("remotes are {}".format(remote_host_list))
 
-local_mvip = input("Enter the MVIP of the cluster we are pinging from: ")
-local_admin = input("Enter the local admin user: ")
-local_password = input("Enter the local admin password: ")
-
 local_sfe = ElementFactory.create(local_mvip, local_admin, local_password, print_ascii_art=False)
-local_cls_info = local_sfe.get_cluster_info()
-local_cls_info_json = local_cls_info.to_json()
-local_sips = local_cls_info_json['clusterInfo']['ensemble']
+local_nodes = local_sfe.list_active_nodes()
+for node in local_nodes.nodes:
+    local_sips.append(node.sip)
+    
 for sip in local_sips:
     local_host_list = (','.join(local_sips))
 print("locals are {}".format(local_host_list))
@@ -46,6 +71,16 @@ for sip in local_sips:
     # Run the check and output a simple response
     for host in remote_sips:
         if ping_result_json['details'][host]['successful']:
-            print("Host {} is not showing MTU issues at MTU size {}".format(host, mtu))
+            check = "pass"
+            mtu_out = check_mtu(host, sip, mtu, check)
+            ping_status[host]=mtu_out
+            
         else:
-            print("Host {} is showing MTU issues at MTU size {}".format(host, mtu))
+            check = "fail"
+            mtu_out = check_mtu(host, sip, mtu, check)
+            ping_status[host]=mtu_out
+    for key in ping_status.keys():
+        print("+" + "-"*13 + "+" + "-"*13 + "+----+----+")
+        print("|" + ping_status[key].host +"|"+ ping_status[key].sip +"|"+ str(ping_status[key].mtu) +"|"+ ping_status[key].check + "|")
+    print("+" + "-"*13 + "+" + "-"*13 + "+----+----+")
+        
