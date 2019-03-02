@@ -37,21 +37,21 @@ def get_inputs():
                         metavar='rmt_password',
                         help='Remote password for user')
     args = parser.parse_args()
-    remote_sfmvip = args.rmtm
-    remote_sfuser = args.rmtu
+    remote_mvip = args.rmtm
+    remote_user = args.rmtu
     if not args.rmtp:
-        remote_sfpass = getpass("Enter password for user{} on cluster {}: ".format(remote_sfuser, remote_sfmvip))
+        remote_pass = getpass("Enter password for user{} on cluster {}: ".format(remote_sfuser, remote_sfmvip))
     else:
-        remote_sfpass = args.rmtp
+        remote_pass = args.rmtp
         
     local_mvip = args.lclm
-    local_sfuser = args.lclu
+    local_user = args.lclu
     if not args.lclp:
-        local_sfpass = getpass("Enter password for user{} on cluster {}: ".format(local_sfuser, local_sfmvip))
+        local_pass = getpass("Enter password for user{} on cluster {}: ".format(local_sfuser, local_sfmvip))
     else:
-        local_sfpass = args.lclp
+        local_pass = args.lclp
     
-    return sfmvip, sfuser, sfpass
+    return remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass
 
 def check_mtu(host, sip, mtu, check):
     mtu_status = mtu_check()
@@ -66,11 +66,13 @@ def prettyPrint(host, sip, mtu, check):
     #When printing values wider than the second column, split and print them
     print("| "  + host.center(20) + " | " + sip.center(20) + " | " + mtu.center(10) + " | " + check.center(10) + " |".center(2))
 
+remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass = get_inputs()
+
 remote_sips = []
 local_sips = []
 ping_status = {}
 
-remote_sfe = ElementFactory.create(remote_mvip, remote_admin, remote_password, print_ascii_art=False)
+remote_sfe = ElementFactory.create(remote_mvip, remote_user, remote_pass, print_ascii_art=False)
 remote_nodes = remote_sfe.list_active_nodes()
 for node in remote_nodes.nodes:
     remote_sips.append(node.sip)
@@ -79,7 +81,7 @@ for sip in remote_sips:
     remote_host_list = (','.join(remote_sips))
 print("remotes are {}".format(remote_host_list))
 
-local_sfe = ElementFactory.create(local_mvip, local_admin, local_password, print_ascii_art=False)
+local_sfe = ElementFactory.create(local_mvip, local_user, local_pass, print_ascii_art=False)
 local_nodes = local_sfe.list_active_nodes()
 for node in local_nodes.nodes:
     local_sips.append(node.sip)
