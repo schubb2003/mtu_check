@@ -144,12 +144,6 @@ def get_ping_result(local_user, local_pass, remote_host_list):
         # Set the result to JSON for easy parsing
         ping_result_json = ping_result.to_json()
 
-        print("+" + "-"*71 + "+")
-        remote_hdr = "Remote IP"
-        local_hdr = "Local IP"
-        mtu_hdr = "MTU"
-        state_hdr = "State"
-        prettyPrint(remote_hdr,local_hdr,mtu_hdr,state_hdr)
         # Run the check and output a simple response
         for remote_node in remote_sips:
             if ping_result_json['details'][remote_node]['successful']:
@@ -161,15 +155,21 @@ def get_ping_result(local_user, local_pass, remote_host_list):
                 check = "fail"
                 mtu_out = check_mtu(remote_node, local_node, mtu, check)
                 ping_status[remote_node]=mtu_out
-        for key in ping_status.keys():
-            remote_node = str(ping_status[key].remote_node)
-            local_node = str(ping_status[key].local_node)
-            mtu = str(ping_status[key].mtu) + " "
-            check = str(ping_status[key].check) + " "
-            print("+" + "-"*71 + "+")
-            #print("|" + remote_node +"|"+ local_node +"|"+ mtu +"|"+ check + " |")
-            prettyPrint(remote_node, local_node, mtu, check)
+    print("+" + "-"*71 + "+")
+    remote_hdr = "--Remote IP--"
+    local_hdr = "--Local IP--"
+    mtu_hdr = "--MTU--"
+    state_hdr = "--State--"
+    prettyPrint(remote_hdr,local_hdr,mtu_hdr,state_hdr)
+    for key in ping_status.keys():
+        remote_node = str(ping_status[key].remote_node)
+        local_node = str(ping_status[key].local_node)
+        mtu = str(ping_status[key].mtu) + " "
+        check = str(ping_status[key].check) + " "
         print("+" + "-"*71 + "+")
+        #print("|" + remote_node +"|"+ local_node +"|"+ mtu +"|"+ check + " |")
+        prettyPrint(remote_node, local_node, mtu, check)
+    print("+" + "-"*71 + "+")
 
 def main():
     remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass = get_inputs()
