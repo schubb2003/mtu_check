@@ -10,21 +10,21 @@ ping_status = {}
 class mtu_check(object):
     """
     # Need a object to add to a dict for nice table output
-    params: host = remote cluster node
-    params: sip = local cluser node
+    params: remote_node = remote cluster node
+    params: local_node = local cluser node
     params: mtu = mtu of local cluster node
     params: check = output of whether the check is pass or fail
     """
-    host = ""
-    sip = ""
+    remote_node = ""
+    local_node = ""
     mtu = ""
     check = ""
 
 # This is used to build the object from the class above
-def check_mtu(host, sip, mtu, check):
+def check_mtu(remote_node, local_node, mtu, check):
     mtu_status = mtu_check()
-    mtu_status.host = host
-    mtu_status.sip = sip
+    mtu_status.remote_node = remote_node
+    mtu_status.local_node = local_node
     mtu_status.mtu = mtu
     mtu_status.check = check
     return mtu_status
@@ -76,11 +76,11 @@ def get_inputs():
     
     return remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass
 
-def prettyPrint(host, sip, mtu, check):
+def prettyPrint(remote_node, local_node, mtu, check):
     """
     # Print a nice table view
     """
-    print("| "  + host.center(20) + " | " + sip.center(20) + " | " + mtu.center(10) + " | " + check.center(10) + " |".center(2))
+    print("| "  + remote_node.center(20) + " | " + local_node.center(20) + " | " + mtu.center(10) + " | " + check.center(10) + " |".center(2))
 
 def connect_remote(remote_mvip, remote_user, remote_pass):
     """
@@ -104,7 +104,7 @@ def build_remote(remote_sfe):
     for node in remote_nodes.nodes:
         remote_sips.append(node.sip)
 
-    for sip in remote_sips:
+    for local_node in remote_sips:
         remote_host_list = (','.join(remote_sips))
     print("remotes are {}".format(remote_host_list))
     return remote_sips, remote_host_list
@@ -117,7 +117,7 @@ def build_local(local_sfe):
     for node in local_nodes.nodes:
         local_sips.append(node.sip)
         
-    for sip in local_sips:
+    for local_node in local_sips:
         local_host_list = (','.join(local_sips))
     print("locals are {}".format(local_host_list))
     return local_sips, local_host_list
@@ -127,8 +127,8 @@ def get_ping_result(local_user, local_pass, remote_host_list):
     # Actually do the work of connecting and running the pings
     """
     # This is a node level command and we connect to 442
-    for sip in local_sips:
-        nsip = sip + ":442"
+    for local_node in local_sips:
+        nsip = local_node + ":442"
         nfe = ElementFactory.create(nsip,local_user,local_pass,print_ascii_art=False)
 
         # Get the node networking configuration
@@ -151,24 +151,24 @@ def get_ping_result(local_user, local_pass, remote_host_list):
         state_hdr = "State"
         prettyPrint(remote_hdr,local_hdr,mtu_hdr,state_hdr)
         # Run the check and output a simple response
-        for host in remote_sips:
-            if ping_result_json['details'][host]['successful']:
+        for remote_node in remote_sips:
+            if ping_result_json['details'][remote_node]['successful']:
                 check = "pass"
-                mtu_out = check_mtu(host, sip, mtu, check)
-                ping_status[host]=mtu_out
+                mtu_out = check_mtu(remote_node, local_node, mtu, check)
+                ping_status[remote_node]=mtu_out
                 
             else:
                 check = "fail"
-                mtu_out = check_mtu(host, sip, mtu, check)
-                ping_status[host]=mtu_out
+                mtu_out = check_mtu(remote_node, local_node, mtu, check)
+                ping_status[remote_node]=mtu_out
         for key in ping_status.keys():
-            host = str(ping_status[key].host)
-            sip = str(ping_status[key].sip)
+            remote_node = str(ping_status[key].remote_node)
+            local_node = str(ping_status[key].local_node)
             mtu = str(ping_status[key].mtu) + " "
             check = str(ping_status[key].check) + " "
             print("+" + "-"*71 + "+")
-            #print("|" + host +"|"+ sip +"|"+ mtu +"|"+ check + " |")
-            prettyPrint(host,sip,mtu,check)
+            #print("|" + remote_node +"|"+ local_node +"|"+ mtu +"|"+ check + " |")
+            prettyPrint(remote_node, local_node, mtu, check)
         print("+" + "-"*71 + "+")
 
 def main():
