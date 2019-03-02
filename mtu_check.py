@@ -1,4 +1,4 @@
-import sys
+import argparse
 from solidfire.factory import ElementFactory
 
 class mtu_check(object):
@@ -6,6 +6,52 @@ class mtu_check(object):
     sip = ""
     mtu = ""
     check = ""
+
+def get_inputs():
+    """
+    Get the inputs for connecting to the cluster
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-lclm', type=str,
+                        required=True,
+                        metavar='lcl_mvip',
+                        help='Local MVIP name or IP')
+    parser.add_argument('-lclu', type=str,
+                        required=True,
+                        metavar='lcl_username',
+                        help='Source username to connect with')
+    parser.add_argument('-lclp', type=str,
+                        required=False,
+                        metavar='password',
+                        help='Source password for user')
+    parser.add_argument('-rmtm', type=str,
+                        required=True,
+                        metavar='remote_mvip',
+                        help='Remote MVIP name or IP')
+    parser.add_argument('-rmtu', type=str,
+                        required=True,
+                        metavar='rmt_username',
+                        help='Remote username to connect with')
+    parser.add_argument('-rmtp', type=str,
+                        required=False,
+                        metavar='rmt_password',
+                        help='Remote password for user')
+    args = parser.parse_args()
+    remote_sfmvip = args.rmtm
+    remote_sfuser = args.rmtu
+    if not args.rmtp:
+        remote_sfpass = getpass("Enter password for user{} on cluster {}: ".format(remote_sfuser, remote_sfmvip))
+    else:
+        remote_sfpass = args.rmtp
+        
+    local_mvip = args.lclm
+    local_sfuser = args.lclu
+    if not args.lclp:
+        local_sfpass = getpass("Enter password for user{} on cluster {}: ".format(local_sfuser, local_sfmvip))
+    else:
+        local_sfpass = args.lclp
+    
+    return sfmvip, sfuser, sfpass
 
 def check_mtu(host, sip, mtu, check):
     mtu_status = mtu_check()
@@ -19,19 +65,6 @@ def check_mtu(host, sip, mtu, check):
 def prettyPrint(host, sip, mtu, check):
     #When printing values wider than the second column, split and print them
     print("| "  + host.center(20) + " | " + sip.center(20) + " | " + mtu.center(10) + " | " + check.center(10) + " |".center(2))
-
-
-if len(sys.argv) < 7:
-    print("Insufficient arguments entered:\n"
-          "Usage: python <script> <remote_mvip> <remote_admin> <remote_password>"
-          "<local_mvip> <local_admin> <local_password>")
-
-remote_mvip = sys.argv[1]
-remote_admin = sys.argv[2]
-remote_password = sys.argv[3]
-local_mvip = sys.argv[4]
-local_admin = sys.argv[5]
-local_password = sys.argv[6]
 
 remote_sips = []
 local_sips = []
