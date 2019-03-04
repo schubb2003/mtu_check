@@ -27,6 +27,7 @@ def check_mtu(remote_node, local_node, mtu, check):
     mtu_status.local_node = local_node
     mtu_status.mtu = mtu
     mtu_status.check = check
+    
     return mtu_status
 
 def get_inputs():
@@ -101,6 +102,7 @@ def connect_remote(remote_mvip, remote_user, remote_pass):
                                        remote_user,
                                        remote_pass,
                                        print_ascii_art=False)
+    
     return remote_sfe
 
 def connect_local(local_mvip, local_user, local_pass):
@@ -111,6 +113,7 @@ def connect_local(local_mvip, local_user, local_pass):
                                       local_user,
                                       local_pass,
                                       print_ascii_art=False)
+    
     return local_sfe
 
 def build_remote(remote_sfe):
@@ -123,7 +126,7 @@ def build_remote(remote_sfe):
 
     for local_node in remote_sips:
         remote_host_list = (','.join(remote_sips))
-    print("remotes are {}".format(remote_host_list))
+    
     return remote_sips, remote_host_list
 
 def build_local(local_sfe):
@@ -136,10 +139,10 @@ def build_local(local_sfe):
         
     for local_node in local_sips:
         local_host_list = (','.join(local_sips))
-    print("locals are {}".format(local_host_list))
+    
     return local_sips, local_host_list
 
-def get_ping_result(local_user, local_pass, remote_host_list):
+def get_ping_result(local_user, local_pass, remote_host_list, local_host_list):
     """
     # Actually do the work of connecting and running the pings
     """
@@ -179,12 +182,17 @@ def get_ping_result(local_user, local_pass, remote_host_list):
                 check = "fail"
                 mtu_out = check_mtu(remote_node, local_node, mtu, check)
                 ping_status[remote_node]=mtu_out
+    
+    print("locals are {}".format(local_host_list))
+    print("remotes are {}".format(remote_host_list))
+    
     print("+" + "-"*71 + "+")
     remote_hdr = "--Remote IP--"
     local_hdr = "--Local IP--"
     mtu_hdr = "--MTU--"
     state_hdr = "--State--"
     prettyPrint(remote_hdr,local_hdr,mtu_hdr,state_hdr)
+    
     for key in ping_status.keys():
         remote_node = str(ping_status[key].remote_node)
         local_node = str(ping_status[key].local_node)
@@ -202,7 +210,7 @@ def main():
     local_sfe = connect_local(local_mvip, local_user, local_pass)
     remote_sips, remote_host_list = build_remote(remote_sfe)
     local_sips, local_host_list = build_local(local_sfe)
-    get_ping_result(local_user, local_pass, remote_host_list)
+    get_ping_result(local_user, local_pass, remote_host_list, local_host_list)
 
 if __name__ == "__main__":
     main()
