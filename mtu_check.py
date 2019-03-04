@@ -7,7 +7,7 @@ local_sips = []
 ping_status = {}
 
 # This class is used to allow for a nice output to be displayed
-class mtu_check(object):
+class MtuCheck(object):
     """
     # Need a object to add to a dict for nice table output
     params: remote_node = remote cluster node
@@ -22,7 +22,7 @@ class mtu_check(object):
 
 # This is used to build the object from the class above
 def check_mtu(remote_node, local_node, mtu, check):
-    mtu_status = mtu_check()
+    mtu_status = MtuCheck()
     mtu_status.remote_node = remote_node
     mtu_status.local_node = local_node
     mtu_status.mtu = mtu
@@ -63,37 +63,54 @@ def get_inputs():
     remote_user = args.rmtu
     # If no password on the CLI input, prompt for it
     if not args.rmtp:
-        remote_pass = getpass("Enter password for user{} on cluster {}: ".format(remote_sfuser, remote_sfmvip))
+        remote_pass = getpass("Enter password for user{} "
+                              "on cluster {}: ".format(remote_sfuser,
+                                                       remote_sfmvip))
     else:
         remote_pass = args.rmtp
         
     local_mvip = args.lclm
     local_user = args.lclu
     if not args.lclp:
-        local_pass = getpass("Enter password for user{} on cluster {}: ".format(local_sfuser, local_sfmvip))
+        local_pass = getpass("Enter password for user{} "
+                             "on cluster {}: ".format(local_sfuser,
+                                                      local_sfmvip))
     else:
         local_pass = args.lclp
     
-    return remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass
+    return(remote_mvip,
+           remote_user,
+           remote_pass,
+           local_mvip,
+           local_user,
+           local_pass)
 
 def prettyPrint(remote_node, local_node, mtu, check):
     """
     # Print a nice table view
     """
-    print("| "  + remote_node.center(20) + " | " + local_node.center(20) + " | " + mtu.center(10) + " | " + check.center(10) + " |".center(2))
+    print("| "  + remote_node.center(20) + " | " + 
+          local_node.center(20) + " | " + mtu.center(10) + 
+          " | " + check.center(10) + " |".center(2))
 
 def connect_remote(remote_mvip, remote_user, remote_pass):
     """
     # Create remote cluster connection
     """
-    remote_sfe = ElementFactory.create(remote_mvip, remote_user, remote_pass, print_ascii_art=False)
+    remote_sfe = ElementFactory.create(remote_mvip,
+                                       remote_user,
+                                       remote_pass,
+                                       print_ascii_art=False)
     return remote_sfe
 
 def connect_local(local_mvip, local_user, local_pass):
     """
     # Build local node list
     """
-    local_sfe = ElementFactory.create(local_mvip, local_user, local_pass, print_ascii_art=False)
+    local_sfe = ElementFactory.create(local_mvip,
+                                      local_user,
+                                      local_pass,
+                                      print_ascii_art=False)
     return local_sfe
 
 def build_remote(remote_sfe):
@@ -129,18 +146,25 @@ def get_ping_result(local_user, local_pass, remote_host_list):
     # This is a node level command and we connect to 442
     for local_node in local_sips:
         nsip = local_node + ":442"
-        nfe = ElementFactory.create(nsip,local_user,local_pass,print_ascii_art=False)
+        nfe = ElementFactory.create(nsip,
+                                    local_user,
+                                    local_pass,
+                                    print_ascii_art=False)
 
         # Get the node networking configuration
         net_config = nfe.get_network_config()
         net_config_json = net_config.to_json()
 
-        # Set the MTU as an int and remove 28 bytes for the network and ICMP headers
+        # Set the MTU as an int and remove 28 bytes 
+        #    for the network and ICMP headers
         mtu = (int(net_config_json['network']['Bond10G']['mtu'])) - 28
 
         # Run the ping at the MTU size and prevent fragmentation
-        # Need to find a way to run this out a specified interface in case of a routed network config
-        ping_result = nfe.test_ping(packet_size=mtu,hosts=remote_host_list, prohibit_fragmentation=True)
+        # Need to find a way to run this out a specified 
+        #    interface in case of a routed network config
+        ping_result = nfe.test_ping(packet_size=mtu,
+                                    hosts=remote_host_list,
+                                    prohibit_fragmentation=True)
         # Set the result to JSON for easy parsing
         ping_result_json = ping_result.to_json()
 
@@ -172,7 +196,8 @@ def get_ping_result(local_user, local_pass, remote_host_list):
     print("+" + "-"*71 + "+")
 
 def main():
-    remote_mvip, remote_user, remote_pass, local_mvip, local_user, local_pass = get_inputs()
+    remote_mvip, remote_user, remote_pass, \
+    local_mvip, local_user, local_pass = get_inputs()
     remote_sfe = connect_remote(remote_mvip, remote_user, remote_pass)
     local_sfe = connect_local(local_mvip, local_user, local_pass)
     remote_sips, remote_host_list = build_remote(remote_sfe)
