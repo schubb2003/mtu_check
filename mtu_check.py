@@ -142,7 +142,7 @@ def build_local(local_sfe):
     
     return local_sips, local_host_list
 
-def get_ping_result(local_user, local_pass, remote_host_list, local_host_list):
+def get_ping_result(local_user, local_pass, remote_host_list):
     """
     # Actually do the work of connecting and running the pings
     """
@@ -183,9 +183,38 @@ def get_ping_result(local_user, local_pass, remote_host_list, local_host_list):
                 mtu_out = check_mtu(remote_node, local_node, mtu, check)
                 ping_status[remote_node]=mtu_out
     
-    print("locals are {}".format(local_host_list))
-    print("remotes are {}".format(remote_host_list))
+def print_ping_result(local_host_list, remote_host_list, ping_status):    
+    # Begin local node print output formatting
+    local_host_len = len(local_host_list) + 2
+    if local_host_len < 21:
+        local_host_len = 21
+
+    # Set local node information
+    local_header = "--Ping from--"
+    print("+" + "-"*21 + "+" + \
+          "\n| {:^20}".format(local_header) + "{:20}".format("|") + \
+          "\n+" + "-"*21 + "+")
+          
+    for key in ping_status.keys():
+        print("| {:^20}".format(ping_status[key].local_node) + \
+              "{:20}\n+".format("|") + "-"*21 + "+")
+
+    # Beging remote node print output formatting
+    remote_host_len = len(remote_host_list) + 2
+    if remote_host_len < 21:
+        remote_host_len = 21
+
+    # Set remote node information
+    remote_header = "--Ping to--"
+    print("+" + "-"*21 + "+" + \
+          "\n| {:^20}".format(remote_header) + "{:20}".format("|") + \
+          "\n+" + "-"*21 + "+")
+          
+    for key in ping_status.keys():
+        print("| {:^20}".format(key) + \
+              "{:20}\n+".format("|") + "-"*21 + "+")
     
+    # Print the information in a table like format
     print("+" + "-"*71 + "+")
     remote_hdr = "--Remote IP--"
     local_hdr = "--Local IP--"
@@ -199,7 +228,6 @@ def get_ping_result(local_user, local_pass, remote_host_list, local_host_list):
         mtu = str(ping_status[key].mtu) + " "
         check = str(ping_status[key].check) + " "
         print("+" + "-"*71 + "+")
-        #print("|" + remote_node +"|"+ local_node +"|"+ mtu +"|"+ check + " |")
         prettyPrint(remote_node, local_node, mtu, check)
     print("+" + "-"*71 + "+")
 
@@ -210,7 +238,8 @@ def main():
     local_sfe = connect_local(local_mvip, local_user, local_pass)
     remote_sips, remote_host_list = build_remote(remote_sfe)
     local_sips, local_host_list = build_local(local_sfe)
-    get_ping_result(local_user, local_pass, remote_host_list, local_host_list)
+    get_ping_result(local_user, local_pass, remote_host_list)
+    print_ping_result(local_host_list, remote_host_list, ping_status)
 
 if __name__ == "__main__":
     main()
