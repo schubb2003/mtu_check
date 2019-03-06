@@ -136,11 +136,8 @@ def build_local(local_sfe):
     local_nodes = local_sfe.list_active_nodes()
     for node in local_nodes.nodes:
         local_sips.append(node.sip)
-        
-    for local_node in local_sips:
-        local_host_list = (','.join(local_sips))
-    
-    return local_sips, local_host_list
+
+    return local_sips
 
 def get_ping_result(local_user, local_pass, remote_host_list):
     """
@@ -183,12 +180,7 @@ def get_ping_result(local_user, local_pass, remote_host_list):
                 mtu_out = check_mtu(remote_node, local_node, mtu, check)
                 ping_status[remote_node]=mtu_out
     
-def print_ping_result(local_host_list, remote_host_list, ping_status):    
-    # Begin local node print output formatting
-    local_host_len = len(local_host_list) + 2
-    if local_host_len < 21:
-        local_host_len = 21
-
+def print_ping_result(ping_status):
     # Set local node information
     local_header = "--Ping from--"
     print("+" + "-"*21 + "+" + \
@@ -197,13 +189,9 @@ def print_ping_result(local_host_list, remote_host_list, ping_status):
           
     for key in ping_status.keys():
         print("| {:^20}".format(ping_status[key].local_node) + \
-              "{:20}\n+".format("|") + "-"*21 + "+")
-
-    # Beging remote node print output formatting
-    remote_host_len = len(remote_host_list) + 2
-    if remote_host_len < 21:
-        remote_host_len = 21
-
+              "{:20}\n+".format("|") + " "*21 + "+")
+    print("+" + "-"*21 + "+\n")
+    
     # Set remote node information
     remote_header = "--Ping to--"
     print("+" + "-"*21 + "+" + \
@@ -212,7 +200,8 @@ def print_ping_result(local_host_list, remote_host_list, ping_status):
           
     for key in ping_status.keys():
         print("| {:^20}".format(key) + \
-              "{:20}\n+".format("|") + "-"*21 + "+")
+              "{:20}\n+".format("|") + " "*21 + "+")
+    print("+" + "-"*21 + "+\n")
     
     # Print the information in a table like format
     print("+" + "-"*71 + "+")
@@ -237,9 +226,9 @@ def main():
     remote_sfe = connect_remote(remote_mvip, remote_user, remote_pass)
     local_sfe = connect_local(local_mvip, local_user, local_pass)
     remote_sips, remote_host_list = build_remote(remote_sfe)
-    local_sips, local_host_list = build_local(local_sfe)
+    local_sips = build_local(local_sfe)
     get_ping_result(local_user, local_pass, remote_host_list)
-    print_ping_result(local_host_list, remote_host_list, ping_status)
+    print_ping_result(ping_status)
 
 if __name__ == "__main__":
     main()
