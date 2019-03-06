@@ -181,6 +181,9 @@ def get_ping_result(local_user, local_pass, remote_host_list):
                 ping_status[remote_node]=mtu_out
     
 def print_ping_result(ping_status):
+    ping_status_len = len(ping_status)
+    local_status_check = 0
+    remote_status_check = 0
     # Set local node information
     local_header = "--Ping from--"
     print("+" + "-"*21 + "+" + \
@@ -188,8 +191,13 @@ def print_ping_result(ping_status):
           "\n+" + "-"*21 + "+")
           
     for key in ping_status.keys():
-        print("| {:^20}".format(ping_status[key].local_node) + \
-              "{:20}\n+".format("|") + " "*21 + "+")
+        if local_status_check < (ping_status_len - 1):
+            print("| {:^20}".format(ping_status[key].local_node) + \
+                  "{:20}\n+".format("|") + " "*21 + "+")
+        else:
+            print("| {:^20}".format(ping_status[key].local_node) + \
+                  "{:20}".format("|"))
+        local_status_check = local_status_check + 1
     print("+" + "-"*21 + "+\n")
     
     # Set remote node information
@@ -199,8 +207,13 @@ def print_ping_result(ping_status):
           "\n+" + "-"*21 + "+")
           
     for key in ping_status.keys():
-        print("| {:^20}".format(key) + \
-              "{:20}\n+".format("|") + " "*21 + "+")
+        if remote_status_check < (ping_status_len - 1):
+            print("| {:^20}".format(ping_status[key].remote_node) + \
+                  "{:20}\n+".format("|") + " "*21 + "+")
+        else:
+            print("| {:^20}".format(ping_status[key].remote_node) + \
+                  "{:20}".format("|"))
+        remote_status_check = remote_status_check + 1
     print("+" + "-"*21 + "+\n")
     
     # Print the information in a table like format
