@@ -1,5 +1,7 @@
 import argparse
+import os
 from solidfire.factory import ElementFactory
+from platform import system
 
 # declare vars for later use
 remote_sips = []
@@ -85,6 +87,12 @@ def get_inputs():
            local_mvip,
            local_user,
            local_pass)
+
+def clear_screen():
+    if system().lower() == "windows":
+        os.system('cls')
+    else:
+        os.system('clear')
 
 def prettyPrint(remote_node, local_node, mtu, check):
     """
@@ -241,6 +249,7 @@ def main():
     remote_sips, remote_host_list = build_remote(remote_sfe)
     local_sips = build_local(local_sfe)
     get_ping_result(local_user, local_pass, remote_host_list)
+    clear_screen()
     print_ping_result(ping_status)
 
 if __name__ == "__main__":
