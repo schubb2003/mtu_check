@@ -4,6 +4,7 @@ import argparse
 import os
 from solidfire.factory import ElementFactory
 from platform import system
+from prettytable import PrettyTable
 
 # declare vars for later use
 remote_sips = []
@@ -194,55 +195,30 @@ def print_ping_result(ping_status):
     ping_status_len = len(ping_status)
     local_status_check = 0
     remote_status_check = 0
-    # Set local node information
-    local_header = "--Ping from--"
-    print("+" + "-"*21 + "+" + \
-          "\n| {:^20}".format(local_header) + "{:20}".format("|") + \
-          "\n+" + "-"*21 + "+")
-          
+
+    local_header = PrettyTable(['--Ping from--'])      
     for key in ping_status.keys():
-        if local_status_check < (ping_status_len - 1):
-            print("| {:^20}".format(ping_status[key].local_node) + \
-                  "{:20}\n+".format("|") + " "*21 + "+")
-        else:
-            print("| {:^20}".format(ping_status[key].local_node) + \
-                  "{:20}".format("|"))
-        local_status_check = local_status_check + 1
-    print("+" + "-"*21 + "+\n")
+        local_header.add_row([ping_status[key].local_node])
+    print(local_header)
     
-    # Set remote node information
-    remote_header = "--Ping to--"
-    print("+" + "-"*21 + "+" + \
-          "\n| {:^20}".format(remote_header) + "{:20}".format("|") + \
-          "\n+" + "-"*21 + "+")
-          
+    remote_header = PrettyTable(['--Ping to--'])
     for key in ping_status.keys():
-        if remote_status_check < (ping_status_len - 1):
-            print("| {:^20}".format(ping_status[key].remote_node) + \
-                  "{:20}\n+".format("|") + " "*21 + "+")
-        else:
-            print("| {:^20}".format(ping_status[key].remote_node) + \
-                  "{:20}".format("|"))
-        remote_status_check = remote_status_check + 1
-    print("+" + "-"*21 + "+\n")
+        remote_header.add_row([ping_status[key].remote_node])
+    print(remote_header)
     
-    # Print the information in a table like format
-    print("+" + "-"*71 + "+")
-    remote_hdr = "--Remote IP--"
-    local_hdr = "--Local IP--"
-    mtu_hdr = "--MTU--"
-    state_hdr = "--State--"
-    prettyPrint(remote_hdr,local_hdr,mtu_hdr,state_hdr)
-    
+    final_header = PrettyTable(['--Remote IP--',
+                                '--Local IP--',
+                                '--MTU--',
+                                '--state_header--'])
+        
     for key in ping_status.keys():
         remote_node = str(ping_status[key].remote_node)
         local_node = str(ping_status[key].local_node)
         mtu = str(ping_status[key].mtu) + " "
         check = str(ping_status[key].check) + " "
-        print("+" + "-"*71 + "+")
-        prettyPrint(remote_node, local_node, mtu, check)
-    print("+" + "-"*71 + "+")
-
+        final_header.add_row([remote_node,local_node,mtu,check])
+    print(final_header)
+    
 def main():
     remote_mvip, remote_user, remote_pass, \
     local_mvip, local_user, local_pass = get_inputs()
