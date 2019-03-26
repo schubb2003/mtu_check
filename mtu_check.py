@@ -97,14 +97,6 @@ def clear_screen():
     else:
         os.system('clear')
 
-def prettyPrint(remote_node, local_node, mtu, check):
-    """
-    # Print a nice table view
-    """
-    print("| "  + remote_node.center(20) + " | " + 
-          local_node.center(20) + " | " + mtu.center(10) + 
-          " | " + check.center(10) + " |".center(2))
-
 def connect_remote(remote_mvip, remote_user, remote_pass):
     """
     # Create remote cluster connection
