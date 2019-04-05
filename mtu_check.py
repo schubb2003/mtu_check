@@ -3,8 +3,11 @@
 import argparse
 import os
 from solidfire.factory import ElementFactory
+from solidfire import common
 from platform import system
 from prettytable import PrettyTable
+
+common.LogLevel(0)
 
 # declare vars for later use
 remote_sips = []
